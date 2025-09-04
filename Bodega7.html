@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gestión de Pedidos - Materiales El Topollo</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-6 font-sans">
+
+  <header class="text-center mb-8">
+    <h1 class="text-3xl font-bold text-red-700">🚚 Materiales el Topollo</h1>
+    <p class="italic text-gray-600">“Al servicio en la construcción de su hogar”</p>
+  </header>
+
+  <!-- FORMULARIO -->
+  <form id="pedidoForm" class="bg-white p-6 rounded shadow-md space-y-4 max-w-4xl mx-auto">
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <label class="block font-semibold">📦 Número de Pedido</label>
+        <input type="text" name="numeroPedido" id="numeroPedido" class="border p-2 rounded w-full" required />
+      </div>
+      <div>
+        <label class="block font-semibold">👤 Nombre del Cliente</label>
+        <input type="text" name="cliente" id="cliente" class="border p-2 rounded w-full" />
+      </div>
+      <div>
+        <label class="block font-semibold">🧑‍💼 Nombre del Vendedor</label>
+        <input type="text" name="vendedor" id="vendedor" class="border p-2 rounded w-full" />
+      </div>
+      <div>
+        <label class="block font-semibold">🚚 Nombre del Chofer</label>
+        <input type="text" name="chofer" id="chofer" class="border p-2 rounded w-full" />
+      </div>
+      <div>
+        <label class="block font-semibold">📋 Estado del Pedido</label>
+        <select name="estado" id="estado" class="border p-2 rounded w-full">
+          <option value="">Seleccione estado</option>
+          <option value="en espera">⏳ En espera</option>
+          <option value="cargando">📦 Cargando</option>
+          <option value="en ruta">🚛 En ruta</option>
+          <option value="entregado">✅ Entregado</option>
+          <option value="sin receptor">🚫 Sin receptor</option>
+        </select>
+      </div>
+      <div id="tiempoEstimadoDiv" class="hidden">
+        <label class="block font-semibold">⏰ Tiempo Estimado de Entrega</label>
+        <input type="text" name="tiempoEstimado" id="tiempoEstimado" class="border p-2 rounded w-full" />
+      </div>
+      <div>
+        <label class="block font-semibold">🏭 Hora de Salida de Bodega</label>
+        <input type="time" name="horaSalida" id="horaSalida" class="border p-2 rounded w-full" />
+      </div>
+      <div>
+        <label class="block font-semibold">📍 Hora de Entrega</label>
+        <input type="time" name="horaEntrega" id="horaEntrega" class="border p-2 rounded w-full" />
+      </div>
+      <div class="col-span-2">
+        <label class="block font-semibold">📬 Nombre de quien Recibe</label>
+        <input type="text" name="recibe" id="recibe" class="border p-2 rounded w-full" />
+      </div>
+      <div class="col-span-2">
+        <label class="block font-semibold">🧾 Estado de Factura/Nota</label>
+        <select name="factura" id="factura" class="border p-2 rounded w-full">
+          <option value="">Seleccione</option>
+          <option value="firma">✍️ Firma</option>
+          <option value="cobro">💰 Cobro</option>
+        </select>
+      </div>
+    </div>
+    <button type="submit" class="bg-red-600 text-white px-6 py-2 rounded hover:bg-red-700">Guardar Pedido</button>
+  </form>
+
+  <!-- MENSAJE ALERTA -->
+  <div id="notificacion" class="hidden text-red-700 text-center mt-4 font-semibold"></div>
+
+  <!-- TABLA RESUMEN -->
+  <section class="mt-10 max-w-6xl mx-auto">
+    <h2 class="text-xl font-bold mb-4">📄 Pedidos Registrados</h2>
+    <table class="min-w-full bg-white border rounded shadow text-sm">
+      <thead class="bg-gray-200">
+        <tr>
+          <th class="p-2 border">Pedido</th>
+          <th class="p-2 border">Cliente</th>
+          <th class="p-2 border">Vendedor</th>
+          <th class="p-2 border">Estado</th>
+          <th class="p-2 border">Chofer</th>
+          <th class="p-2 border">Salida</th>
+          <th class="p-2 border">Entrega</th>
+          <th class="p-2 border">Recibe</th>
+          <th class="p-2 border">Factura/Nota</th>
+        </tr>
+      </thead>
+      <tbody id="tablaPedidos"></tbody>
+    </table>
+  </section>
+
+  <!-- SCRIPT -->
+  <script>
+    const form = document.getElementById('pedidoForm');
+    const tablaPedidos = document.getElementById('tablaPedidos');
+    const estado = document.getElementById('estado');
+    const tiempoEstimadoDiv = document.getElementById('tiempoEstimadoDiv');
+    const notificacion = document.getElementById('notificacion');
+
+    const pedidos = {};
+
+    estado.addEventListener('change', () => {
+      tiempoEstimadoDiv.classList.toggle('hidden', estado.value !== 'en espera');
+    });
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+
+      const id = document.getElementById('numeroPedido').value.trim();
+      const cliente = document.getElementById('cliente').value.trim();
+      const vendedor = document.getElementById('vendedor').value.trim();
+      const chofer = document.getElementById('chofer').value.trim();
+      const estadoVal = estado.value;
+      const salida = document.getElementById('horaSalida').value;
+      const entrega = document.getElementById('horaEntrega').value;
+      const recibe = document.getElementById('recibe').value.trim();
+      const factura = document.getElementById('factura').value;
+      const tiempoEstimado = document.getElementById('tiempoEstimado').value.trim();
+
+      // Guardar localmente
+      pedidos[id] = { cliente, vendedor, chofer, estado: estadoVal, salida, entrega, recibe, factura, tiempoEstimado };
+
+      // Mostrar alerta si no hay receptor
+      if (estadoVal === 'sin receptor') {
+        notificacion.classList.remove('hidden');
+        notificacion.textContent = `⚠️ No hay quien reciba el pedido #${id}. Contacta al vendedor ${vendedor} vía WhatsApp.`;
+      } else {
+        notificacion.classList.add('hidden');
+      }
+
+      renderTabla();
+
+      // Enviar a Google Sheets
+      fetch("https://script.google.com/macros/s/AKfycbyH7xR-f-hUpnvHgv-wo5GWzDhioqbtHL0jWjN2DfgA3ZDaoLhyOgNd6HoWScPAsnam5w/exec", {
+        method: "POST",
+        body: new FormData(form),
+      })
+      .then(res => res.json())
+      .then(data => {
+        console.log("Respuesta Sheets:", data);
+        alert("✅ Pedido guardado en Google Sheets correctamente.");
+      })
+      .catch(err => {
+        console.error("Error al enviar a Google Sheets:", err);
+        alert("❌ No se pudo conectar con Google Sheets.");
+      });
+
+      form.reset();
+      tiempoEstimadoDiv.classList.add('hidden');
+    });
+
+    function renderTabla() {
+      tablaPedidos.innerHTML = '';
+      for (const [id, data] of Object.entries(pedidos)) {
+        tablaPedidos.innerHTML += `
+          <tr class="text-center">
+            <td class="border p-1">${id}</td>
+            <td class="border p-1">${data.cliente}</td>
+            <td class="border p-1">${data.vendedor}</td>
+            <td class="border p-1">${data.estado}</td>
+            <td class="border p-1">${data.chofer}</td>
+            <td class="border p-1">${data.salida}</td>
+            <td class="border p-1">${data.entrega}</td>
+            <td class="border p-1">${data.recibe || '—'}</td>
+            <td class="border p-1">${data.factura || '—'}</td>
+          </tr>
+        `;
+      }
+    }
+  </script>
+</body>
+</html>
